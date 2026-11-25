@@ -1,0 +1,81 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: finsentinel-ai
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:finsentinel}
+    username: ${POSTGRES_USER:finsentinel}
+    password: ${POSTGRES_PASSWORD:finsentinel_dev_local_change_me}
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 3
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  base-url: ${APP_BASE_URL:http://localhost:5173}
+  security:
+    session-cookie-name: ${SESSION_COOKIE_NAME:FS_SESSION}
+    session-cookie-secure: ${SESSION_COOKIE_SECURE:false}
+    session-ttl-minutes: ${SESSION_TTL_MINUTES:480}
+    csrf-cookie-name: ${CSRF_COOKIE_NAME:XSRF-TOKEN}
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+    from: ${MAIL_FROM:no-reply@finsentinel.local}
+  ai:
+    provider: ${AI_PROVIDER:}
+    model: ${AI_MODEL:}
+    openai-api-key: ${OPENAI_API_KEY:}
+    gemini-api-key: ${GEMINI_API_KEY:}
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}
+    local-base-url: ${AI_LOCAL_BASE_URL:}
+    request-timeout-ms: ${AI_REQUEST_TIMEOUT:30000}
+    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:1024}
+  demo:
+    seed-enabled: ${DEMO_SEED_ENABLED:true}

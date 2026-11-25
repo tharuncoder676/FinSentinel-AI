@@ -1,0 +1,9 @@
+{
+  "name": "FinSentinel AI",
+  "short_name": "FinSentinel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F8F7",
+  "theme_color": "#087F5B",
+  "description": "Predictive financial risk intelligence, digital twin simulation, and adaptive payment advisor."
+}
