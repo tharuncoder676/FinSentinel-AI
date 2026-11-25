@@ -68,12 +68,12 @@ springdoc:
     path: /swagger-ui.html
 
 app:
-  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  frontend-origin: ${FRONTEND_ORIGIN:https://*.vercel.app,http://localhost:5173}
   base-url: ${APP_BASE_URL:http://localhost:5173}
   security:
     session-cookie-name: ${SESSION_COOKIE_NAME:FS_SESSION}
-    session-cookie-secure: ${SESSION_COOKIE_SECURE:false}
-    session-cookie-same-site: ${SESSION_COOKIE_SAMESITE:Lax}
+    session-cookie-secure: ${SESSION_COOKIE_SECURE:true}
+    session-cookie-same-site: ${SESSION_COOKIE_SAMESITE:None}
     session-ttl-minutes: ${SESSION_TTL_MINUTES:480}
     csrf-cookie-name: ${CSRF_COOKIE_NAME:XSRF-TOKEN}
   mail:

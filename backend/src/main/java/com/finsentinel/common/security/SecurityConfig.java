@@ -129,7 +129,9 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "http://localhost:4173",
-                "http://127.0.0.1:4173"
+                "http://127.0.0.1:4173",
+                "https://*.vercel.app",
+                "https://*.up.railway.app"
         ));
         if (appProperties.frontendOrigin() != null) {
             for (String raw : appProperties.frontendOrigin().split(",")) {
