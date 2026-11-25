@@ -22,7 +22,7 @@ class AiProviderFactoryTest {
                         provider,
                         model,
                         mistralModel,
-                        "nvidia/nv-embedqa-e5-v5",
+                        "nvidia/nemotron-3.5-embed-1b",
                         true,
                         nvidiaKey1,
                         nvidiaKey2,
@@ -43,7 +43,7 @@ class AiProviderFactoryTest {
     @Test
     void buildsOrderedThreeKeyNvidiaChainFollowedStrictlyByMistralFallback() {
         AiProviderFactory factory = new AiProviderFactory(
-                propsWithAi("nvidia", "meta/llama-3.1-70b-instruct", "mistral-large-latest",
+                propsWithAi("nvidia", "nvidia/nemotron-3.5-bolt-e4b", "mistral-large-latest",
                         "nvapi-key-1", "nvapi-key-2", "nvapi-key-3", "", "mistral-fallback-key"),
                 new ObjectMapper()
         );
@@ -51,7 +51,7 @@ class AiProviderFactoryTest {
         List<AiProviderAdapter> chain = factory.resolveFailoverChain();
         assertEquals(4, chain.size());
         assertEquals("nvidia#key-1", chain.get(0).providerName());
-        assertEquals("meta/llama-3.1-70b-instruct", chain.get(0).configuredModel());
+        assertEquals("nvidia/nemotron-3.5-bolt-e4b", chain.get(0).configuredModel());
         assertEquals("nvidia#key-2", chain.get(1).providerName());
         assertEquals("nvidia#key-3", chain.get(2).providerName());
         assertEquals("mistral", chain.get(3).providerName());

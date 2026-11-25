@@ -51,7 +51,7 @@ public class AiProviderFactory {
         List<AiProviderAdapter> chain = new java.util.ArrayList<>();
 
         List<String> nvidiaKeys = resolveNvidiaKeys();
-        String nvidiaModel = configuredModelOrDefault("meta/llama-3.1-70b-instruct");
+        String nvidiaModel = configuredModelOrDefault("nvidia/nemotron-3.5-bolt-e4b");
         String mistralModel = hasText(appProperties.ai().mistralModel())
                 ? appProperties.ai().mistralModel().trim()
                 : ( "mistral".equals(provider) ? configuredModelOrDefault("mistral-large-latest") : "mistral-large-latest" );
@@ -160,7 +160,7 @@ public class AiProviderFactory {
         if (!nvidiaKeys.isEmpty()) {
             String embedModel = hasText(appProperties.ai().embeddingModel())
                     ? appProperties.ai().embeddingModel().trim()
-                    : "nvidia/nv-embedqa-e5-v5";
+                    : "nvidia/nemotron-3.5-embed-1b";
             for (String key : nvidiaKeys) {
                 java.util.Optional<List<double[]>> res = callEmbeddingEndpoint(
                         "https://integrate.api.nvidia.com/v1/embeddings", key, embedModel, texts, inputType, true);
@@ -309,6 +309,9 @@ public class AiProviderFactory {
                     if ("[DONE]".equals(payload)) break;
                     JsonNode node = mapper.readTree(payload);
                     String delta = node.path("choices").path(0).path("delta").path("content").asText("");
+                    if (delta.isEmpty()) {
+                        delta = node.path("choices").path(0).path("delta").path("reasoning_content").asText("");
+                    }
                     if (!delta.isEmpty()) {
                         full.append(delta);
                         if (onDelta != null) onDelta.accept(delta);

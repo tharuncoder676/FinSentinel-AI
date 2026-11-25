@@ -50,9 +50,9 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       SESSION_COOKIE_SAMESITE: ${SESSION_COOKIE_SAMESITE:-Lax}
       AI_PROVIDER: ${AI_PROVIDER:-nvidia}
-      AI_MODEL: ${AI_MODEL:-meta/llama-3.1-70b-instruct}
+      AI_MODEL: ${AI_MODEL:-nvidia/nemotron-3.5-bolt-e4b}
       MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-large-latest}
-      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-nvidia/nv-embedqa-e5-v5}
+      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-nvidia/nemotron-3.5-embed-1b}
       AI_RAG_ENABLED: ${AI_RAG_ENABLED:-true}
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       NVIDIA_API_KEY_2: ${NVIDIA_API_KEY_2:-}

@@ -13,9 +13,9 @@ Copy `.env.example` to `.env` for local runs. **Never commit `.env` or API keys 
 - **Security & Cross-Origin Cookies**: `SESSION_COOKIE_NAME` (`FS_SESSION`), `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE` (`Lax` locally/same-origin, `None` when Vercel frontend hits a separate HTTPS backend origin), `FRONTEND_ORIGIN` (comma-separated allowed origins/patterns)
 - **AI & RAG (3-Key NVIDIA NIM -> Mistral Failover)**:
   - `AI_PROVIDER`: `nvidia` (recommended; tries all NVIDIA keys sequentially and falls back to Mistral ONLY if all 3 fail) | `mistral` | `openai` | `gemini` | `anthropic` | `local`
-  - `AI_MODEL`: `meta/llama-3.1-70b-instruct` or `nvidia/llama-3.1-nemotron-70b-instruct` (NVIDIA NIM)
+  - `AI_MODEL`: `nvidia/nemotron-3.5-bolt-e4b` or `nvidia/nemotron-3.5-lightning-30b-a3b` (NVIDIA NIM)
   - `MISTRAL_MODEL`: `mistral-large-latest` (used automatically when failover switches to Mistral)
-  - `AI_EMBEDDING_MODEL`: defaults to `nvidia/nv-embedqa-e5-v5`
+  - `AI_EMBEDDING_MODEL`: defaults to `nvidia/nemotron-3.5-embed-1b`
   - `AI_RAG_ENABLED`: `true` (seeds 8 Financial Skill Packs & enables user custom skill ingestion + PostgreSQL FTS/pgvector hybrid retrieval)
   - `NVIDIA_API_KEY`, `NVIDIA_API_KEY_2`, `NVIDIA_API_KEY_3` (or comma-separated `NVIDIA_API_KEYS`), plus `MISTRAL_API_KEY` (kept strictly server-side)
 
@@ -68,8 +68,9 @@ Deploy `backend/` using the included `backend/Dockerfile` with these environment
 - `SERVER_PORT=8080`
 - `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (from Step A)
 - `AI_PROVIDER=nvidia`
-- `AI_MODEL=meta/llama-3.1-70b-instruct`
+- `AI_MODEL=nvidia/nemotron-3.5-bolt-e4b`
 - `MISTRAL_MODEL=mistral-large-latest`
+- `AI_EMBEDDING_MODEL=nvidia/nemotron-3.5-embed-1b`
 - `NVIDIA_API_KEY=<nvapi-key-1>`
 - `NVIDIA_API_KEY_2=<nvapi-key-2>`
 - `NVIDIA_API_KEY_3=<nvapi-key-3>`

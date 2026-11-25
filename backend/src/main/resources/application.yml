@@ -78,7 +78,7 @@ app:
     provider: ${AI_PROVIDER:}
     model: ${AI_MODEL:}
     mistral-model: ${MISTRAL_MODEL:mistral-large-latest}
-    embedding-model: ${AI_EMBEDDING_MODEL:nvidia/nv-embedqa-e5-v5}
+    embedding-model: ${AI_EMBEDDING_MODEL:nvidia/nemotron-3.5-embed-1b}
     rag-enabled: ${AI_RAG_ENABLED:true}
     nvidia-api-key: ${NVIDIA_API_KEY:}
     nvidia-api-key-2: ${NVIDIA_API_KEY_2:}
