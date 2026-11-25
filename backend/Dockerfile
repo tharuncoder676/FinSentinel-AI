@@ -7,9 +7,10 @@ RUN mvn -B -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN addgroup -S finsentinel && adduser -S finsentinel -G finsentinel
+RUN addgroup -g 1000 -S finsentinel && adduser -u 1000 -S finsentinel -G finsentinel
 COPY --from=build /app/target/*.jar app.jar
-RUN mkdir -p /app/data/reports && chown -R finsentinel:finsentinel /app
+RUN mkdir -p /app/data/reports && chown -R 1000:1000 /app
 USER finsentinel
-EXPOSE 8080
+ENV PORT=7860
+EXPOSE 7860 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

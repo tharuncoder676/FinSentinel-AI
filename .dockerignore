@@ -1,0 +1,10 @@
+node_modules
+frontend
+dist
+dist-bundle
+.git
+.gemini
+.idea
+target
+*.log
+*.zip
