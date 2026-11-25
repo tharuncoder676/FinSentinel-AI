@@ -50,6 +50,9 @@ spring:
       max-request-size: 5MB
 
 management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
   endpoints:
     web:
       exposure:

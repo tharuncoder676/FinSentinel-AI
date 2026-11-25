@@ -47,5 +47,7 @@ services:
         value: None
       - key: MAIL_ENABLED
         value: "false"
+      - key: MANAGEMENT_HEALTH_MAIL_ENABLED
+        value: "false"
       - key: DEMO_SEED_ENABLED
         value: "true"
