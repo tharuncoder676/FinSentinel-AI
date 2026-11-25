@@ -4,6 +4,9 @@
 .env.*.local
 *.pem
 *.key
+.local-runtime/
+dist-bundle/
+*.zip
 
 # Java / Maven
 backend/target/

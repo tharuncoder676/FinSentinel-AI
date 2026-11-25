@@ -10,11 +10,22 @@ FinSentinel AI is a predictive financial intelligence and adaptive payment plann
 - **Deterministic Cash-Flow Forecasting (`cashflow-deterministic-v1.0`)**: `BigDecimal` (`HALF_UP`) event-driven daily projections with documented same-day ordering, month-end clamping, and distinct shortfall vs reserve-breach tracking.
 - **Financial Digital Twin & Stress Test Laboratory**: Interactive sliders, timeline scrubbing, 6 adverse shock templates, multi-case comparison, and saved scenarios—strictly isolated from live ledger records.
 - **Adaptive Payment Planner & EMI Advisor**: Java `PriorityQueue` obligation ranking, feasible schedule comparison, hypothetical calendar simulation, manual settlement recording without double-counting, and reconciled `BigDecimal` EMI amortization.
-- **Grounded AI Financial Assistant**: Configurable OpenAI, Google Gemini, Anthropic, and local OpenAI-compatible adapters with SSE streaming, cancellation, prompt-injection defense, 8 server-scoped tools, and transparent deterministic fallback when offline.
+- **Grounded AI Financial Assistant + Hybrid RAG Skills**: Supports multi-key NVIDIA NIM failover (`NVIDIA_API_KEY`, `NVIDIA_API_KEY_2`, `NVIDIA_API_KEY_3`) -> Mistral fallback, plus OpenAI, Gemini, Anthropic, and local OpenAI-compatible adapters with SSE streaming, cancellation, prompt-injection defense, 8 server-scoped tools, hybrid PostgreSQL/`pgvector` Financial Intelligence Skill Packs, custom user skill ingestion, and deterministic fallback when offline.
 - **Multilingual, Accessible & Printable**: Light/Dark themes, English/Tamil (`en`/`ta`), WCAG 2.2 AA checked UI, OpenPDF report generation, Spring Scheduler reminders, and role-protected Admin metrics.
 
-## Quick Start
-See [docs/deployment-runbook.md](docs/deployment-runbook.md) and [docs/demo-runbook.md](docs/demo-runbook.md).
+## One-Click Zip Quick Start (Auto-Installs Dependencies & Starts Servers)
+Unzip the folder anywhere on your laptop and run one command — missing Java 21, Node.js, PostgreSQL 16, Maven dependencies, and npm packages are provisioned automatically:
+
+- **Windows**: Double-click `START_FINSENTINEL.bat` *(stop cleanly anytime with `STOP_FINSENTINEL.bat`)*
+- **macOS / Linux**:
+  ```bash
+  chmod +x start-finsentinel.sh stop-finsentinel.sh
+  ./start-finsentinel.sh
+  ```
+- Opens `http://127.0.0.1:5173` automatically once healthy.
+
+## Developer & Cloud Deployment Guides
+See [docs/deployment-runbook.md](docs/deployment-runbook.md) (Supabase + Render + Vercel + NVIDIA/Mistral failover) and [docs/demo-runbook.md](docs/demo-runbook.md).
 
 ```bash
 # Backend tests & server (requires PostgreSQL 16 on localhost:5432)
