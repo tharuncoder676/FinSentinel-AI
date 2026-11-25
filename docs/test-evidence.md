@@ -3,8 +3,9 @@
 ## 1. Backend Automated Suite (Java 21 + PostgreSQL 16.6 + Flyway)
 - **Command**: `cd backend && .\mvnw.cmd package`
 - **Exit Code**: `0`
-- **Result**: `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0`
-  - `EndToEndPostgresIntegrationTest`: `1 passed` (Flyway `V1`–`V3` against live PostgreSQL 16.6; auth registration/login/HTTP-only cookies; empty-workspace state; cross-user IDOR `404`; ledger arithmetic `132,000`; transfer exclusion; partial payment without double-counting; Digital Twin non-mutation; CSV valid + malformed preview; AI prompt injection block + deterministic fallback; OpenPDF `%PDF` report generation & cross-user `404`; Admin `403` escalation & `200` overview; notification idempotent deduplication; account deletion `401`).
+- **Result**: `Tests run: 16, Failures: 0, Errors: 0, Skipped: 0`
+  - `EndToEndPostgresIntegrationTest`: `1 passed` (Flyway `V1`–`V4` against live PostgreSQL 16.6; auth registration/login/HTTP-only cookies; empty-workspace state; cross-user IDOR `404`; ledger arithmetic `132,000`; transfer exclusion; partial payment without double-counting; Digital Twin non-mutation; CSV valid + malformed preview; AI prompt injection block + deterministic fallback; RAG system skill seeding (`>=8` docs), custom skill ingestion (`201`), PostgreSQL FTS + hybrid retrieval, cross-user RAG isolation, injection rejection (`400`), AI chat `knowledgeSources`; OpenPDF `%PDF` report generation & cross-user `404`; Admin `403` escalation & `200` overview; notification idempotent deduplication; account deletion `401`).
+  - `AiProviderFactoryTest`: `2 passed` (ordered 3-key NVIDIA NIM failover chain -> `mistral` fallback with dedicated `mistralModel`; comma-separated key parsing, deduplication, and offline empty-embedding degradation).
   - `ForecastEngineUnitTest`: `3 passed` (same-day ordering, leap/non-leap Feb 31->28/29 clamping, shortfall vs reserve breach & recovery).
   - `RiskEngineUnitTest`: `4 passed` (threshold boundaries 0/30/31/60/61/80/81/100, bounded `[0,1]` normalization & reproducibility, monotonicity, missing-data `INSUFFICIENT_DATA` without silent zeroing).
   - `PaymentAndEmiUnitTest`: `5 passed` (fixed-rate amortizing principal reconciliation, zero-interest branch reconciliation, variable-rate unsupported flag, invalid rate rejection, `PriorityQueue` tie-breaking).
@@ -19,7 +20,7 @@
 ## 3. Playwright E2E, Multi-Viewport, Screenshot & WCAG 2.2 AA Audit
 - **Command**: `cd frontend && npm.cmd run test:e2e`
 - **Exit Code**: `0`
-- **Result**: `2 passed` (100% pass, `0` console errors, `0` serious/critical `@axe-core/playwright` WCAG 2.2 AA violations on Landing and Dashboard, `0` horizontal overflow at `360px`, `390px`, `768px`, `1024px`, `1440px`).
+- **Result**: `2 passed` (100% pass, `0` console errors, `0` serious/critical `@axe-core/playwright` WCAG 2.2 AA violations on Landing and Dashboard, `0` horizontal overflow at `360px`, `390px`, `768px`, `1024px`, `1440px`; verified SSE streaming completion cleanly via `DispatcherType.ASYNC` and RAG Knowledge Skills cited inside `/app/assistant`).
 - **Captured Screenshots (`docs/screenshots/`)**:
   - `landing-desktop-1440.png` (266,181 bytes)
   - `login-desktop-1440.png` (80,563 bytes)

@@ -9,12 +9,13 @@ spring:
   application:
     name: finsentinel-ai
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:finsentinel}
+    url: ${DATABASE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:finsentinel}}
     username: ${POSTGRES_USER:finsentinel}
     password: ${POSTGRES_PASSWORD:finsentinel_dev_local_change_me}
     hikari:
-      maximum-pool-size: 15
-      minimum-idle: 3
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      connection-timeout: 20000
   jpa:
     open-in-view: false
     hibernate:
@@ -63,6 +64,7 @@ app:
   security:
     session-cookie-name: ${SESSION_COOKIE_NAME:FS_SESSION}
     session-cookie-secure: ${SESSION_COOKIE_SECURE:false}
+    session-cookie-same-site: ${SESSION_COOKIE_SAMESITE:Lax}
     session-ttl-minutes: ${SESSION_TTL_MINUTES:480}
     csrf-cookie-name: ${CSRF_COOKIE_NAME:XSRF-TOKEN}
   mail:
@@ -71,6 +73,14 @@ app:
   ai:
     provider: ${AI_PROVIDER:}
     model: ${AI_MODEL:}
+    mistral-model: ${MISTRAL_MODEL:mistral-large-latest}
+    embedding-model: ${AI_EMBEDDING_MODEL:nvidia/nv-embedqa-e5-v5}
+    rag-enabled: ${AI_RAG_ENABLED:true}
+    nvidia-api-key: ${NVIDIA_API_KEY:}
+    nvidia-api-key-2: ${NVIDIA_API_KEY_2:}
+    nvidia-api-key-3: ${NVIDIA_API_KEY_3:}
+    nvidia-api-keys: ${NVIDIA_API_KEYS:}
+    mistral-api-key: ${MISTRAL_API_KEY:}
     openai-api-key: ${OPENAI_API_KEY:}
     gemini-api-key: ${GEMINI_API_KEY:}
     anthropic-api-key: ${ANTHROPIC_API_KEY:}

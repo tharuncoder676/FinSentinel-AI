@@ -14,6 +14,7 @@ public record AppProperties(
     public record Security(
             String sessionCookieName,
             boolean sessionCookieSecure,
+            String sessionCookieSameSite,
             int sessionTtlMinutes,
             String csrfCookieName
     ) {}
@@ -26,6 +27,14 @@ public record AppProperties(
     public record Ai(
             String provider,
             String model,
+            String mistralModel,
+            String embeddingModel,
+            boolean ragEnabled,
+            String nvidiaApiKey,
+            String nvidiaApiKey2,
+            String nvidiaApiKey3,
+            String nvidiaApiKeys,
+            String mistralApiKey,
             String openaiApiKey,
             String geminiApiKey,
             String anthropicApiKey,

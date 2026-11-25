@@ -75,11 +75,12 @@ test.describe('FinSentinel AI Full E2E, Demo Walkthrough, Viewports & WCAG Audit
     await expect(page.getByText(/Contractual Due-Date Schedule/i)).toBeVisible();
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'payment-planner-1440.png') });
 
-    // 9-10. Ask AI why risk changed & inspect backend-grounded explanation
+    // 9-10. Ask AI why risk changed & inspect backend-grounded + RAG explanation
     await page.goto('/app/assistant');
     await page.getByLabel(/Message AI Financial Assistant/i).fill('Why did my risk score change and what payments are upcoming?');
     await page.getByRole('button', { name: /^Send$/i }).click();
-    await expect(page.getByText(/Deterministic Backend Analysis|Explainable Risk Score/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Deterministic Backend \+ RAG Knowledge Analysis|Explainable Risk Score/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/RAG Knowledge Skills Cited/i).first()).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: /Inspect Backend-Grounded Calculations/i }).first().click();
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'ai-assistant-1440.png') });
 

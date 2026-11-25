@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileDown, FileText, Plus } from 'lucide-react';
-import { apiRequest } from '../lib/api';
+import { apiRequest, apiUrl } from '../lib/api';
 import { useApp } from '../context/AppContext';
 
 interface ReportItem {
@@ -95,7 +95,7 @@ export function ReportsPage() {
                   <td className="p-3 text-xs font-mono-num">{new Date(r.createdAt).toLocaleString()}</td>
                   <td className="p-3 text-right">
                     <a
-                      href={`/api/v1/reports/${r.id}/download`}
+                      href={apiUrl(`/api/v1/reports/${r.id}/download`)}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded border text-xs font-semibold no-underline"
                       style={{ borderColor: 'var(--border)', background: 'var(--elevated)', color: 'var(--text-primary)' }}
                     >

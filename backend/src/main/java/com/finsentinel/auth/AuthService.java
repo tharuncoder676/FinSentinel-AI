@@ -300,22 +300,28 @@ public class AuthService {
         session.setCreatedAt(now);
         sessionRepository.save(session);
 
+        String sameSite = appProperties.security().sessionCookieSameSite();
+        String resolvedSameSite = (sameSite != null && !sameSite.isBlank()) ? sameSite : "Lax";
+
         ResponseCookie cookie = ResponseCookie.from(appProperties.security().sessionCookieName(), rawToken)
                 .httpOnly(true)
                 .secure(appProperties.security().sessionCookieSecure())
                 .path("/")
-                .sameSite("Lax")
+                .sameSite(resolvedSameSite)
                 .maxAge(Duration.ofMinutes(appProperties.security().sessionTtlMinutes()))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private void clearSessionCookie(HttpServletResponse response) {
+        String sameSite = appProperties.security().sessionCookieSameSite();
+        String resolvedSameSite = (sameSite != null && !sameSite.isBlank()) ? sameSite : "Lax";
+
         ResponseCookie cookie = ResponseCookie.from(appProperties.security().sessionCookieName(), "")
                 .httpOnly(true)
                 .secure(appProperties.security().sessionCookieSecure())
                 .path("/")
-                .sameSite("Lax")
+                .sameSite(resolvedSameSite)
                 .maxAge(0)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

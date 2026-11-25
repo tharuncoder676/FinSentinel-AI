@@ -1,3 +1,12 @@
+export const API_BASE_URL = ((import.meta.env?.VITE_API_BASE_URL as string | undefined) || '').replace(/\/+$/, '');
+
+export function apiUrl(path: string): string {
+  if (!path) return API_BASE_URL;
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE_URL}${normalized}`;
+}
+
 export interface ApiError {
   code: string;
   message: string;
@@ -14,7 +23,7 @@ async function ensureCsrfToken(): Promise<string | null> {
   let token = getCookie('XSRF-TOKEN');
   if (!token) {
     try {
-      const res = await fetch('/api/v1/auth/csrf', { credentials: 'include' });
+      const res = await fetch(apiUrl('/api/v1/auth/csrf'), { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         token = data.token ?? getCookie('XSRF-TOKEN');
@@ -54,7 +63,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     }
   }
 
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     ...options,
     credentials: 'include',
     headers,

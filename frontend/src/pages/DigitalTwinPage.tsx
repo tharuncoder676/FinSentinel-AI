@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, Legend
 } from 'recharts';
 import { RotateCcw, Save, FileDown, FolderOpen, Trash2, ShieldCheck } from 'lucide-react';
-import { apiRequest } from '../lib/api';
+import { apiRequest, apiUrl } from '../lib/api';
 import { useApp } from '../context/AppContext';
 
 interface SimParams {
@@ -149,7 +149,7 @@ export function DigitalTwinPage() {
         method: 'POST',
         body: JSON.stringify({ reportType: 'SCENARIO', scenarioId: saved.id, horizonDays: params.horizonDays }),
       });
-      window.open(`/api/v1/reports/${rep.id}/download`, '_blank');
+      window.open(apiUrl(`/api/v1/reports/${rep.id}/download`), '_blank');
       notifyToast('Scenario PDF report generated.');
     } catch {
       notifyToast('Unable to export scenario PDF.');

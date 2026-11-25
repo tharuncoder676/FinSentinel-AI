@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Upload, Download, Trash2, Edit3, AlertTriangle } from 'lucide-react';
-import { apiRequest, HttpApiError } from '../lib/api';
+import { apiRequest, apiUrl, HttpApiError } from '../lib/api';
 import { useApp } from '../context/AppContext';
 import { ModalDialog } from '../components/ModalDialog';
 
@@ -315,7 +315,7 @@ export function TransactionsPage() {
             Import CSV
           </button>
           <a
-            href="/api/v1/transactions/export"
+            href={apiUrl('/api/v1/transactions/export')}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border text-xs font-medium no-underline"
             style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
           >

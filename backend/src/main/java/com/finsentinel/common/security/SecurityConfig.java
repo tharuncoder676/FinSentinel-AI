@@ -53,6 +53,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfRepo.setCookieName(appProperties.security().csrfCookieName());
+        csrfRepo.setCookieCustomizer(cookie -> {
+            cookie.secure(appProperties.security().sessionCookieSecure());
+            String sameSite = appProperties.security().sessionCookieSameSite();
+            cookie.sameSite(sameSite != null && !sameSite.isBlank() ? sameSite : "Lax");
+        });
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         requestHandler.setCsrfRequestAttributeName(null);
 
@@ -77,6 +82,7 @@ public class SecurityConfig {
                 .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';"))
             )
             .authorizeHttpRequests(auth -> auth
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC, jakarta.servlet.DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
                     "/api/v1/auth/register",
@@ -119,13 +125,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                appProperties.frontendOrigin(),
+        java.util.LinkedHashSet<String> originPatterns = new java.util.LinkedHashSet<>(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "http://localhost:4173",
                 "http://127.0.0.1:4173"
         ));
+        if (appProperties.frontendOrigin() != null) {
+            for (String raw : appProperties.frontendOrigin().split(",")) {
+                String trimmed = raw.trim();
+                if (!trimmed.isEmpty()) {
+                    originPatterns.add(trimmed);
+                }
+            }
+        }
+        config.setAllowedOriginPatterns(new java.util.ArrayList<>(originPatterns));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN", "X-Request-Id"));
         config.setAllowCredentials(true);

@@ -1,0 +1,49 @@
+# Render Blueprint for FinSentinel AI Spring Boot Backend
+# Deploy via Render Dashboard -> New -> Blueprint (pointing to this repository)
+services:
+  - type: web
+    name: finsentinel-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: SERVER_PORT
+        value: "8080"
+      - key: DATABASE_URL
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: AI_PROVIDER
+        value: nvidia
+      - key: AI_MODEL
+        value: meta/llama-3.1-70b-instruct
+      - key: MISTRAL_MODEL
+        value: mistral-large-latest
+      - key: AI_EMBEDDING_MODEL
+        value: nvidia/nv-embedqa-e5-v5
+      - key: AI_RAG_ENABLED
+        value: "true"
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_API_KEY_2
+        sync: false
+      - key: NVIDIA_API_KEY_3
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SESSION_COOKIE_SAMESITE
+        value: None
+      - key: MAIL_ENABLED
+        value: "false"
+      - key: DEMO_SEED_ENABLED
+        value: "true"

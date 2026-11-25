@@ -36,28 +36,203 @@ public class AiProviderFactory {
     }
 
     public AiProviderAdapter resolveActiveAdapter() {
+        List<AiProviderAdapter> chain = resolveFailoverChain();
+        return chain.isEmpty() ? new UnconfiguredAdapter() : chain.get(0);
+    }
+
+    /**
+     * Resolves an ordered failover chain of configured providers.
+     * When NVIDIA keys are configured (1..N via NVIDIA_API_KEY, NVIDIA_API_KEY_2/3, or NVIDIA_API_KEYS),
+     * all NVIDIA keys are attempted sequentially first; Mistral is placed strictly after all NVIDIA keys
+     * so Mistral is invoked only when every configured NVIDIA key fails.
+     */
+    public List<AiProviderAdapter> resolveFailoverChain() {
         String provider = appProperties.ai().provider() != null ? appProperties.ai().provider().trim().toLowerCase() : "";
-        return switch (provider) {
-            case "openai" -> new OpenAiCompatibleAdapter("openai", "https://api.openai.com", appProperties.ai().openaiApiKey(),
-                    configuredModelOrEmpty(), appProperties, objectMapper, httpClient);
-            case "gemini" -> new GeminiAdapter(appProperties, objectMapper, httpClient);
-            case "anthropic" -> new AnthropicAdapter(appProperties, objectMapper, httpClient);
-            case "local" -> new OpenAiCompatibleAdapter("local", appProperties.ai().localBaseUrl(), "local-optional",
-                    configuredModelOrEmpty(), appProperties, objectMapper, httpClient);
-            default -> {
-                if (hasText(appProperties.ai().geminiApiKey())) yield new GeminiAdapter(appProperties, objectMapper, httpClient);
-                if (hasText(appProperties.ai().openaiApiKey())) yield new OpenAiCompatibleAdapter("openai", "https://api.openai.com",
-                        appProperties.ai().openaiApiKey(), configuredModelOrEmpty(), appProperties, objectMapper, httpClient);
-                if (hasText(appProperties.ai().anthropicApiKey())) yield new AnthropicAdapter(appProperties, objectMapper, httpClient);
-                if (hasText(appProperties.ai().localBaseUrl())) yield new OpenAiCompatibleAdapter("local", appProperties.ai().localBaseUrl(),
-                        "local-optional", configuredModelOrEmpty(), appProperties, objectMapper, httpClient);
-                yield new UnconfiguredAdapter();
+        List<AiProviderAdapter> chain = new java.util.ArrayList<>();
+
+        List<String> nvidiaKeys = resolveNvidiaKeys();
+        String nvidiaModel = configuredModelOrDefault("meta/llama-3.1-70b-instruct");
+        String mistralModel = hasText(appProperties.ai().mistralModel())
+                ? appProperties.ai().mistralModel().trim()
+                : ( "mistral".equals(provider) ? configuredModelOrDefault("mistral-large-latest") : "mistral-large-latest" );
+
+        if ("mistral".equals(provider)) {
+            addMistralAdapter(chain, mistralModel);
+            addNvidiaAdapters(chain, nvidiaKeys, nvidiaModel);
+        } else if ("openai".equals(provider)) {
+            if (hasText(appProperties.ai().openaiApiKey())) {
+                chain.add(new OpenAiCompatibleAdapter("openai", "https://api.openai.com",
+                        appProperties.ai().openaiApiKey(), configuredModelOrDefault("gpt-4o-mini"),
+                        appProperties, objectMapper, httpClient));
             }
-        };
+            addNvidiaAdapters(chain, nvidiaKeys, nvidiaModel);
+            addMistralAdapter(chain, mistralModel);
+        } else if ("gemini".equals(provider)) {
+            if (hasText(appProperties.ai().geminiApiKey())) {
+                chain.add(new GeminiAdapter(appProperties, objectMapper, httpClient));
+            }
+            addNvidiaAdapters(chain, nvidiaKeys, nvidiaModel);
+            addMistralAdapter(chain, mistralModel);
+        } else if ("anthropic".equals(provider)) {
+            if (hasText(appProperties.ai().anthropicApiKey())) {
+                chain.add(new AnthropicAdapter(appProperties, objectMapper, httpClient));
+            }
+            addNvidiaAdapters(chain, nvidiaKeys, nvidiaModel);
+            addMistralAdapter(chain, mistralModel);
+        } else if ("local".equals(provider)) {
+            if (hasText(appProperties.ai().localBaseUrl())) {
+                chain.add(new OpenAiCompatibleAdapter("local", appProperties.ai().localBaseUrl(), "local-optional",
+                        configuredModelOrEmpty(), appProperties, objectMapper, httpClient));
+            }
+        } else {
+            // Default / "nvidia" / "auto": NVIDIA key chain (#1 -> #2 -> #3), then Mistral fallback ONLY if all NVIDIA keys fail
+            addNvidiaAdapters(chain, nvidiaKeys, nvidiaModel);
+            addMistralAdapter(chain, mistralModel);
+            if (hasText(appProperties.ai().geminiApiKey())) chain.add(new GeminiAdapter(appProperties, objectMapper, httpClient));
+            if (hasText(appProperties.ai().openaiApiKey())) chain.add(new OpenAiCompatibleAdapter("openai", "https://api.openai.com",
+                    appProperties.ai().openaiApiKey(), configuredModelOrDefault("gpt-4o-mini"), appProperties, objectMapper, httpClient));
+            if (hasText(appProperties.ai().anthropicApiKey())) chain.add(new AnthropicAdapter(appProperties, objectMapper, httpClient));
+            if (hasText(appProperties.ai().localBaseUrl())) chain.add(new OpenAiCompatibleAdapter("local", appProperties.ai().localBaseUrl(),
+                    "local-optional", configuredModelOrEmpty(), appProperties, objectMapper, httpClient));
+        }
+        return chain;
+    }
+
+    public List<String> resolveNvidiaKeys() {
+        java.util.LinkedHashSet<String> keys = new java.util.LinkedHashSet<>();
+        addSplitKeys(keys, appProperties.ai().nvidiaApiKey());
+        addSplitKeys(keys, appProperties.ai().nvidiaApiKey2());
+        addSplitKeys(keys, appProperties.ai().nvidiaApiKey3());
+        addSplitKeys(keys, appProperties.ai().nvidiaApiKeys());
+        return List.copyOf(keys);
+    }
+
+    public String describeFailoverSummary() {
+        List<AiProviderAdapter> chain = resolveFailoverChain();
+        if (chain.isEmpty() || !chain.get(0).isConfigured()) {
+            return "No live external AI provider key/model configured on server. Deterministic backend + RAG explanations remain available.";
+        }
+        int nvidiaCount = resolveNvidiaKeys().size();
+        boolean hasMistral = hasText(appProperties.ai().mistralApiKey());
+        AiProviderAdapter primary = chain.get(0);
+        if (primary.providerName().startsWith("nvidia") && nvidiaCount > 0) {
+            return "Live AI armed: nvidia (" + nvidiaCount + " key" + (nvidiaCount > 1 ? "s" : "")
+                    + ", model: " + primary.configuredModel() + ")"
+                    + (hasMistral ? " -> mistral fallback when all NVIDIA keys fail" : "");
+        }
+        return "Live AI provider '" + primary.providerName() + "' configured (model: " + primary.configuredModel() + ").";
+    }
+
+    private void addNvidiaAdapters(List<AiProviderAdapter> chain, List<String> keys, String nvidiaModel) {
+        for (int i = 0; i < keys.size(); i++) {
+            String tag = (keys.size() == 1) ? "nvidia" : "nvidia#key-" + (i + 1);
+            chain.add(new OpenAiCompatibleAdapter(tag, "https://integrate.api.nvidia.com",
+                    keys.get(i), nvidiaModel, appProperties, objectMapper, httpClient));
+        }
+    }
+
+    private void addMistralAdapter(List<AiProviderAdapter> chain, String mistralModel) {
+        if (hasText(appProperties.ai().mistralApiKey())) {
+            chain.add(new OpenAiCompatibleAdapter("mistral", "https://api.mistral.ai",
+                    appProperties.ai().mistralApiKey(), mistralModel, appProperties, objectMapper, httpClient));
+        }
+    }
+
+    private static void addSplitKeys(java.util.Set<String> target, String raw) {
+        if (!hasText(raw)) return;
+        for (String part : raw.split("[,;\\r\\n]+")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                target.add(trimmed);
+            }
+        }
+    }
+
+    /**
+     * Generates dense embeddings using NVIDIA NIM (rotating through all configured NVIDIA keys on failure)
+     * or OpenAI fallback when available. Returns empty gracefully offline so hybrid FTS + local vectors run seamlessly.
+     */
+    public java.util.Optional<List<double[]>> embedTexts(List<String> texts, String inputType) {
+        if (texts == null || texts.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        List<String> nvidiaKeys = resolveNvidiaKeys();
+        if (!nvidiaKeys.isEmpty()) {
+            String embedModel = hasText(appProperties.ai().embeddingModel())
+                    ? appProperties.ai().embeddingModel().trim()
+                    : "nvidia/nv-embedqa-e5-v5";
+            for (String key : nvidiaKeys) {
+                java.util.Optional<List<double[]>> res = callEmbeddingEndpoint(
+                        "https://integrate.api.nvidia.com/v1/embeddings", key, embedModel, texts, inputType, true);
+                if (res.isPresent()) {
+                    return res;
+                }
+            }
+        }
+        if (hasText(appProperties.ai().openaiApiKey())) {
+            String embedModel = hasText(appProperties.ai().embeddingModel()) && !appProperties.ai().embeddingModel().startsWith("nvidia/")
+                    ? appProperties.ai().embeddingModel().trim()
+                    : "text-embedding-3-small";
+            return callEmbeddingEndpoint(
+                    "https://api.openai.com/v1/embeddings", appProperties.ai().openaiApiKey(), embedModel, texts, inputType, false);
+        }
+        return java.util.Optional.empty();
+    }
+
+    private java.util.Optional<List<double[]>> callEmbeddingEndpoint(String url, String apiKey, String embedModel,
+                                                                     List<String> texts, String inputType, boolean isNvidia) {
+        try {
+            java.util.LinkedHashMap<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("model", embedModel);
+            body.put("input", texts);
+            if (isNvidia) {
+                body.put("input_type", (inputType != null && !inputType.isBlank()) ? inputType : "passage");
+                body.put("encoding_format", "float");
+                body.put("truncate", "END");
+            }
+
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofMillis(Math.min(15000, Math.max(4000, appProperties.ai().requestTimeoutMs()))))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() >= 400) {
+                return java.util.Optional.empty();
+            }
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode dataArr = root.path("data");
+            if (!dataArr.isArray() || dataArr.size() != texts.size()) {
+                return java.util.Optional.empty();
+            }
+            List<double[]> vectors = new java.util.ArrayList<>(dataArr.size());
+            for (JsonNode item : dataArr) {
+                JsonNode emb = item.path("embedding");
+                if (!emb.isArray() || emb.isEmpty()) {
+                    return java.util.Optional.empty();
+                }
+                double[] vec = new double[emb.size()];
+                for (int i = 0; i < emb.size(); i++) {
+                    vec[i] = emb.get(i).asDouble(0.0);
+                }
+                vectors.add(vec);
+            }
+            return java.util.Optional.of(vectors);
+        } catch (Exception ignored) {
+            return java.util.Optional.empty();
+        }
     }
 
     private String configuredModelOrEmpty() {
         return appProperties.ai().model() != null ? appProperties.ai().model().trim() : "";
+    }
+
+    private String configuredModelOrDefault(String fallbackModel) {
+        String configured = configuredModelOrEmpty();
+        return configured.isEmpty() ? fallbackModel : configured;
     }
 
     private static boolean hasText(String s) {

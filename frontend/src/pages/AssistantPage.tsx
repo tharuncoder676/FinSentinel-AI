@@ -1,14 +1,48 @@
 import React, { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Send, Square, Copy, RotateCw, Trash2, Sparkles, ChevronDown, ChevronUp, Info } from 'lucide-react';
-import { apiRequest } from '../lib/api';
+import { Bot, Send, Square, Copy, RotateCw, Trash2, Sparkles, ChevronDown, ChevronUp, Info, BookOpen, Plus } from 'lucide-react';
+import { apiRequest, apiUrl } from '../lib/api';
 import { useApp } from '../context/AppContext';
+import { ModalDialog } from '../components/ModalDialog';
 
 interface AiStatus {
   liveAiConfigured: boolean;
   activeProvider: string;
   activeModel: string;
   statusMessage: string;
+}
+
+interface RagStatus {
+  enabled: boolean;
+  totalDocuments: number;
+  totalChunks: number;
+  pgvectorAvailable: boolean;
+  embeddingMode: string;
+}
+
+interface RagDocument {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  scope: 'SYSTEM' | 'USER';
+  sourceType: string;
+  chunkCount: number;
+  preview: string;
+  updatedAt: string;
+}
+
+interface RagChunkSource {
+  documentId: string;
+  documentTitle: string;
+  category: string;
+  scope: string;
+  chunkIndex: number;
+  heading: string;
+  content: string;
+  score: number;
+  retrievalMode: string;
+  citation: string;
 }
 
 interface ConversationSummary {
@@ -24,6 +58,7 @@ interface MessageItem {
   content: string;
   citations?: string[];
   groundedCalculations?: Array<{ toolName: string; citation: string; data: unknown }>;
+  knowledgeSources?: RagChunkSource[];
   liveAiUsed?: boolean;
   unavailableReason?: string;
 }
@@ -38,11 +73,58 @@ export function AssistantPage() {
   const [streaming, setStreaming] = useState(false);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [expandedCalc, setExpandedCalc] = useState<string | null>(null);
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const [skillTitle, setSkillTitle] = useState('');
+  const [skillCategory, setSkillCategory] = useState('CUSTOM_SKILL');
+  const [skillContent, setSkillContent] = useState('');
   const abortRef = useRef<AbortController | null>(null);
 
   const { data: status } = useQuery({
     queryKey: ['ai-status'],
     queryFn: () => apiRequest<AiStatus>('/api/v1/ai/status'),
+  });
+
+  const { data: ragStatus } = useQuery({
+    queryKey: ['rag-status'],
+    queryFn: () => apiRequest<RagStatus>('/api/v1/rag/status'),
+  });
+
+  const { data: ragDocs = [] } = useQuery({
+    queryKey: ['rag-documents'],
+    queryFn: () => apiRequest<RagDocument[]>('/api/v1/rag/documents'),
+    enabled: skillsOpen,
+  });
+
+  const ingestSkillMut = useMutation({
+    mutationFn: () =>
+      apiRequest<RagDocument>('/api/v1/rag/documents', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: skillTitle.trim(),
+          category: skillCategory,
+          content: skillContent.trim(),
+          scope: 'USER',
+        }),
+      }),
+    onSuccess: (doc) => {
+      qc.invalidateQueries({ queryKey: ['rag-documents'] });
+      qc.invalidateQueries({ queryKey: ['rag-status'] });
+      setSkillTitle('');
+      setSkillContent('');
+      notifyToast(`Indexed "${doc.title}" (${doc.chunkCount} RAG chunks).`);
+    },
+    onError: (err: Error) => {
+      notifyToast(err.message || 'Unable to index skill document.');
+    },
+  });
+
+  const deleteSkillMut = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/v1/rag/documents/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rag-documents'] });
+      qc.invalidateQueries({ queryKey: ['rag-status'] });
+      notifyToast('Knowledge document deleted.');
+    },
   });
 
   const { data: conversations = [] } = useQuery({
@@ -92,7 +174,7 @@ export function AssistantPage() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (csrfMatch) headers['X-XSRF-TOKEN'] = decodeURIComponent(csrfMatch[1]);
 
-      const res = await fetch('/api/v1/ai/chat/stream', {
+      const res = await fetch(apiUrl('/api/v1/ai/chat/stream'), {
         method: 'POST',
         credentials: 'include',
         headers,
@@ -140,6 +222,7 @@ export function AssistantPage() {
                         liveAiUsed: data.liveAiUsed,
                         unavailableReason: data.unavailableReason,
                         groundedCalculations: data.groundedCalculations,
+                        knowledgeSources: data.knowledgeSources,
                       }
                     : m
                 )
@@ -233,23 +316,35 @@ export function AssistantPage() {
               <h1 className="text-base font-bold m-0">AI Financial Intelligence Assistant</h1>
               <p className="text-[11px] m-0" style={{ color: 'var(--text-secondary)' }}>
                 {status?.statusMessage || 'Checking backend provider configuration...'}
+                {ragStatus ? ` • RAG Skills: ${ragStatus.totalDocuments} docs / ${ragStatus.totalChunks} chunks (${ragStatus.embeddingMode})` : ''}
               </p>
             </div>
           </div>
-          {!status?.liveAiConfigured && (
-            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded border" style={{ borderColor: 'var(--warning)', color: 'var(--warning)' }}>
-              <Info className="w-3.5 h-3.5" aria-hidden="true" />
-              Deterministic Mode (No External LLM Key)
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSkillsOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border cursor-pointer font-medium"
+              style={{ borderColor: 'var(--border)', background: 'var(--elevated)', color: 'var(--text-primary)' }}
+            >
+              <BookOpen className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+              Knowledge Skills (RAG)
+            </button>
+            {!status?.liveAiConfigured && (
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded border" style={{ borderColor: 'var(--warning)', color: 'var(--warning)' }}>
+                <Info className="w-3.5 h-3.5" aria-hidden="true" />
+                Deterministic + RAG Fallback
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Suggested Prompts */}
         <div className="px-4 py-2.5 border-b flex flex-wrap gap-2" style={{ borderColor: 'var(--border)', background: 'var(--elevated)' }}>
           {[
             'Why did my risk score change and what drives it?',
-            'How does a 15-day salary delay plus unexpected expense affect my cash flow?',
-            'Which upcoming payments need attention and how do schedules compare?',
+            'What is the 50/30/20 budget rule and how many emergency months should I keep?',
+            'Compare debt Avalanche vs Snowball for my upcoming obligations.',
           ].map((q) => (
             <button
               key={q}
@@ -314,6 +409,24 @@ export function AssistantPage() {
                       <span>Sources: {m.citations.join(' • ')}</span>
                     )}
                   </div>
+
+                  {m.knowledgeSources && m.knowledgeSources.length > 0 && (
+                    <div className="border rounded-md p-2.5 space-y-1.5" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+                      <p className="text-[11px] font-semibold m-0" style={{ color: 'var(--text-secondary)' }}>
+                        RAG Knowledge Skills Cited ({m.knowledgeSources.length})
+                      </p>
+                      <ul className="space-y-1 list-none p-0 m-0 text-xs">
+                        {m.knowledgeSources.map((ks) => (
+                          <li key={`${ks.documentId}-${ks.chunkIndex}`} className="border-t pt-1" style={{ borderColor: 'var(--border)' }}>
+                            <span className="font-semibold">{ks.documentTitle}</span> — <span>{ks.heading}</span>{' '}
+                            <span className="text-[11px] font-mono-num" style={{ color: 'var(--text-secondary)' }}>
+                              ({ks.scope} • score {ks.score})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {m.groundedCalculations && m.groundedCalculations.length > 0 && (
                     <div className="border rounded-md" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
@@ -384,6 +497,112 @@ export function AssistantPage() {
           )}
         </form>
       </section>
+
+      <ModalDialog open={skillsOpen} onClose={() => setSkillsOpen(false)} title="Financial Intelligence Skills (RAG)">
+        <div className="space-y-4">
+          {ragStatus && (
+            <div className="p-3 rounded-md border text-xs space-y-1" style={{ borderColor: 'var(--border)', background: 'var(--elevated)' }}>
+              <p className="m-0 font-semibold">
+                Hybrid Engine: {ragStatus.embeddingMode} {ragStatus.pgvectorAvailable ? '• pgvector HNSW active' : '• PostgreSQL FTS + cosine vectors'}
+              </p>
+              <p className="m-0" style={{ color: 'var(--text-secondary)' }}>
+                {ragStatus.totalDocuments} indexed documents across {ragStatus.totalChunks} searchable skill chunks.
+              </p>
+            </div>
+          )}
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!skillTitle.trim() || !skillContent.trim() || ingestSkillMut.isPending) return;
+              ingestSkillMut.mutate();
+            }}
+            className="space-y-2.5 border rounded-md p-3"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            <p className="text-xs font-semibold m-0 flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+              Add Custom Skill / Domain Knowledge
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-2">
+                <label htmlFor="rag-skill-title" className="block text-[11px] font-medium mb-1">Skill Title</label>
+                <input
+                  id="rag-skill-title"
+                  type="text"
+                  required
+                  value={skillTitle}
+                  onChange={(e) => setSkillTitle(e.target.value)}
+                  placeholder="e.g. Monthly Tax Reserve Rules"
+                  className="w-full px-2.5 py-1.5 rounded border text-xs"
+                  style={{ borderColor: 'var(--border)', background: 'var(--elevated)' }}
+                />
+              </div>
+              <div>
+                <label htmlFor="rag-skill-category" className="block text-[11px] font-medium mb-1">Category</label>
+                <select
+                  id="rag-skill-category"
+                  value={skillCategory}
+                  onChange={(e) => setSkillCategory(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded border text-xs"
+                  style={{ borderColor: 'var(--border)', background: 'var(--elevated)' }}
+                >
+                  <option value="CUSTOM_SKILL">Custom Skill</option>
+                  <option value="PERSONAL_FINANCE">Personal Finance</option>
+                  <option value="DEBT_PLANNING">Debt Planning</option>
+                  <option value="PLATFORM_GUIDE">Workspace Note</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="rag-skill-content" className="block text-[11px] font-medium mb-1">Markdown / Domain Playbook Content</label>
+              <textarea
+                id="rag-skill-content"
+                rows={4}
+                required
+                value={skillContent}
+                onChange={(e) => setSkillContent(e.target.value)}
+                placeholder="Paste rules, definitions, financial playbooks, or Q&A guidance for the assistant to retrieve automatically..."
+                className="w-full px-2.5 py-1.5 rounded border text-xs"
+                style={{ borderColor: 'var(--border)', background: 'var(--elevated)' }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={ingestSkillMut.isPending}
+              className="px-3 py-1.5 rounded text-xs font-semibold cursor-pointer"
+              style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+            >
+              {ingestSkillMut.isPending ? 'Indexing Chunks...' : 'Index Knowledge Skill'}
+            </button>
+          </form>
+
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {ragDocs.map((doc) => (
+              <div key={doc.id} className="p-2.5 rounded border text-xs flex items-start justify-between gap-2" style={{ borderColor: 'var(--border)' }}>
+                <div className="min-w-0">
+                  <p className="font-semibold m-0 truncate">{doc.title}</p>
+                  <p className="text-[11px] m-0 mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    {doc.scope} • {doc.category} • {doc.chunkCount} chunks
+                  </p>
+                  <p className="text-[11px] m-0 mt-1" style={{ color: 'var(--text-secondary)' }}>{doc.preview}</p>
+                </div>
+                {doc.scope === 'USER' && (
+                  <button
+                    type="button"
+                    aria-label={`Delete knowledge ${doc.title}`}
+                    onClick={() => deleteSkillMut.mutate(doc.id)}
+                    className="p-1 rounded border cursor-pointer shrink-0"
+                    style={{ borderColor: 'var(--border)', color: 'var(--critical)' }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </ModalDialog>
     </div>
   );
 }
