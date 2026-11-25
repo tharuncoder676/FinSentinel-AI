@@ -14,9 +14,9 @@ services:
       - key: PORT
         value: "8080"
       - key: DATABASE_URL
-        value: "jdbc:postgresql://db.jcpbjzywqzghkcmxobni.supabase.co:5432/postgres?sslmode=require"
+        value: "jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require"
       - key: POSTGRES_USER
-        value: "finsentinel_app"
+        value: "finsentinel_app.jcpbjzywqzghkcmxobni"
       - key: POSTGRES_PASSWORD
         value: "FinSentinel2026!AppPass"
       - key: AI_PROVIDER

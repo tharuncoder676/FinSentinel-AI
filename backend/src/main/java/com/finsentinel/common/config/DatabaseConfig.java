@@ -23,11 +23,12 @@ public class DatabaseConfig {
         String username = properties.getUsername();
         String password = properties.getPassword();
 
-        // Auto-heal known Supabase pooler routing mismatch for project jcpbjzywqzghkcmxobni
-        if (url != null && (url.contains("pooler.supabase.com") || "postgres.jcpbjzywqzghkcmxobni".equals(username))) {
-            log.info("Auto-correcting Supabase connection to direct verified host db.jcpbjzywqzghkcmxobni.supabase.co for tenant jcpbjzywqzghkcmxobni");
-            url = "jdbc:postgresql://db.jcpbjzywqzghkcmxobni.supabase.co:5432/postgres?sslmode=require";
-            username = "finsentinel_app";
+        // Auto-heal known Supabase pooler routing for project jcpbjzywqzghkcmxobni
+        // Uses the IPv4 pooler cluster aws-1-ap-south-1.pooler.supabase.com:5432
+        if (url != null && (url.contains("pooler.supabase.com") || url.contains("jcpbjzywqzghkcmxobni") || (username != null && username.contains("jcpbjzywqzghkcmxobni")))) {
+            log.info("Auto-routing to Supabase IPv4 pooler aws-1-ap-south-1.pooler.supabase.com:5432 for tenant jcpbjzywqzghkcmxobni");
+            url = "jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require";
+            username = "finsentinel_app.jcpbjzywqzghkcmxobni";
             password = "FinSentinel2026!AppPass";
         }
 
