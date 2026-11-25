@@ -14,11 +14,11 @@ services:
       - key: PORT
         value: "8080"
       - key: DATABASE_URL
-        value: "jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require"
+        value: "jdbc:postgresql://db.jcpbjzywqzghkcmxobni.supabase.co:5432/postgres?sslmode=require"
       - key: POSTGRES_USER
-        value: "postgres.jcpbjzywqzghkcmxobni"
+        value: "finsentinel_app"
       - key: POSTGRES_PASSWORD
-        sync: false
+        value: "FinSentinel2026!AppPass"
       - key: AI_PROVIDER
         value: nvidia
       - key: AI_MODEL
