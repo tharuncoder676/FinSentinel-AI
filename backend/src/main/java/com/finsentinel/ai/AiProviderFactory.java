@@ -297,7 +297,8 @@ public class AiProviderFactory {
 
             HttpResponse<InputStream> response = client.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofInputStream());
             if (response.statusCode() >= 400) {
-                throw new IllegalStateException("Provider " + name + " returned HTTP " + response.statusCode());
+                String errBody = new String(response.body().readAllBytes(), StandardCharsets.UTF_8);
+                throw new IllegalStateException("Provider " + name + " returned HTTP " + response.statusCode() + ": " + errBody);
             }
             StringBuilder full = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.body(), StandardCharsets.UTF_8))) {

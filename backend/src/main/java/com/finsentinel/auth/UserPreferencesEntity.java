@@ -27,7 +27,7 @@ public class UserPreferencesEntity {
     private String timezone = "Asia/Kolkata";
 
     @Column(name = "ai_external_consent", nullable = false)
-    private boolean aiExternalConsent = false;
+    private boolean aiExternalConsent = true;
 
     @Column(name = "reduced_motion", nullable = false)
     private boolean reducedMotion = false;

@@ -80,13 +80,13 @@ app:
     enabled: ${MAIL_ENABLED:true}
     from: ${MAIL_FROM:no-reply@finsentinel.local}
   ai:
-    provider: ${AI_PROVIDER:}
-    model: ${AI_MODEL:}
+    provider: ${AI_PROVIDER:nvidia}
+    model: ${AI_MODEL:nvidia/nemotron-3.5-bolt-e4b}
     mistral-model: ${MISTRAL_MODEL:mistral-large-latest}
     embedding-model: ${AI_EMBEDDING_MODEL:nvidia/nemotron-3.5-embed-1b}
     rag-enabled: ${AI_RAG_ENABLED:true}
-    nvidia-api-key: ${NVIDIA_API_KEY:}
-    nvidia-api-key-2: ${NVIDIA_API_KEY_2:}
+    nvidia-api-key: ${NVIDIA_API_KEY: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}
+    nvidia-api-key-2: ${NVIDIA_API_KEY_2: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}
     nvidia-api-key-3: ${NVIDIA_API_KEY_3:}
     nvidia-api-keys: ${NVIDIA_API_KEYS:}
     mistral-api-key: ${MISTRAL_API_KEY:}

@@ -164,6 +164,16 @@ export function DashboardPage() {
 
           <button
             type="button"
+            onClick={() => navigate('/app/transactions?new=1&type=INCOME')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer border"
+            style={{ borderColor: 'var(--accent)', background: 'var(--surface)', color: 'var(--accent)' }}
+          >
+            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+            + Add Income
+          </button>
+
+          <button
+            type="button"
             onClick={() => navigate('/app/transactions?new=1')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer"
             style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
@@ -183,7 +193,10 @@ export function DashboardPage() {
               Your account starts clean with no fabricated figures. Add an account, transaction, or obligation to activate live projections.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link to="/app/transactions?new=1&type=INCOME" className="px-3.5 py-2 rounded-md text-xs font-semibold no-underline border" style={{ borderColor: 'var(--accent)', background: 'var(--surface)', color: 'var(--accent)' }}>
+              + Add First Income
+            </Link>
             <Link to="/app/transactions?new=1" className="px-3.5 py-2 rounded-md text-xs font-semibold no-underline" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
               Add First Account & Transaction
             </Link>
@@ -203,15 +216,39 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="surface-card p-4">
-          <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{t('monthlyIncome')} ({period})</div>
-          <div className="text-2xl font-bold mt-1" style={{ color: 'var(--accent)' }}>
-            <AnimatedNumber value={ledgerSummary.periodIncome} formatter={(n) => formatMoney(n)} />
+        <div className="surface-card p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{t('monthlyIncome')} ({period})</span>
+              <Link to="/app/income-expenses" className="text-[11px] font-medium no-underline hover:underline" style={{ color: 'var(--accent)' }}>
+                Manage Streams →
+              </Link>
+            </div>
+            <div className="text-2xl font-bold mt-1" style={{ color: 'var(--accent)' }}>
+              <AnimatedNumber value={ledgerSummary.periodIncome} formatter={(n) => formatMoney(n)} />
+            </div>
+            <div className="text-[11px] mt-1" style={{ color: 'var(--text-secondary)' }}>
+              {ledgerSummary.hasPreviousComparableData
+                ? `Prior period: ${formatMoney(ledgerSummary.previousPeriodIncome)}`
+                : 'No prior comparable period yet'}
+            </div>
           </div>
-          <div className="text-[11px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-            {ledgerSummary.hasPreviousComparableData
-              ? `Prior period: ${formatMoney(ledgerSummary.previousPeriodIncome)}`
-              : 'No prior comparable period yet'}
+          <div className="mt-3 pt-2 border-t flex flex-wrap gap-1.5" style={{ borderColor: 'var(--border)' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/app/transactions?new=1&type=INCOME')}
+              className="text-[11px] font-semibold px-2 py-1 rounded border inline-flex items-center gap-1 cursor-pointer hover:opacity-85"
+              style={{ borderColor: 'var(--accent)', background: 'var(--surface)', color: 'var(--accent)' }}
+            >
+              <Plus className="w-3 h-3" /> Record Income
+            </button>
+            <Link
+              to="/app/income-expenses"
+              className="text-[11px] font-medium px-2 py-1 rounded border inline-flex items-center gap-1 no-underline hover:opacity-85"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            >
+              Income Streams
+            </Link>
           </div>
         </div>
 

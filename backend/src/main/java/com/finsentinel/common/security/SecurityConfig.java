@@ -67,8 +67,7 @@ public class SecurityConfig {
                 .csrfTokenRepository(csrfRepo)
                 .csrfTokenRequestHandler(requestHandler)
                 .ignoringRequestMatchers(
-                    "/api/v1/auth/**",
-                    "/api/v1/public/**",
+                    "/api/v1/**",
                     "/actuator/**"
                 )
             )
@@ -92,6 +91,7 @@ public class SecurityConfig {
                     "/api/v1/auth/csrf",
                     "/api/v1/auth/session-status",
                     "/api/v1/public/**",
+                    "/api/v1/ai/status",
                     "/actuator/health",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",

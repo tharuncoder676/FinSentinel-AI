@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Upload, Download, Trash2, Edit3, AlertTriangle } from 'lucide-react';
 import { apiRequest, apiUrl, HttpApiError } from '../lib/api';
@@ -97,7 +97,7 @@ export function TransactionsPage() {
   const [formAccountId, setFormAccountId] = useState('');
   const [formTransferAccountId, setFormTransferAccountId] = useState('');
   const [formCategoryId, setFormCategoryId] = useState('');
-  const [formTxType, setFormTxType] = useState('EXPENSE');
+  const [formTxType, setFormTxType] = useState(searchParams.get('type') || 'EXPENSE');
   const [formAmount, setFormAmount] = useState('');
   const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 10));
   const [formMerchant, setFormMerchant] = useState('');
@@ -122,6 +122,20 @@ export function TransactionsPage() {
     queryKey: ['categories'],
     queryFn: () => apiRequest<Category[]>('/api/v1/categories'),
   });
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      const typeParam = searchParams.get('type');
+      if (typeParam && ['INCOME', 'EXPENSE', 'TRANSFER', 'REFUND', 'SAVINGS'].includes(typeParam)) {
+        setFormTxType(typeParam);
+      }
+      setEditingTx(null);
+      setFormAccountId(accounts[0]?.id || '');
+      setFormError(null);
+      setDuplicateConflict(false);
+      setTxModalOpen(true);
+    }
+  }, [searchParams, accounts]);
 
   const txQueryKey = ['transactions', search, txType, from, to, sortBy, sortDir, page];
   const { data: txPage, isLoading } = useQuery({
@@ -327,6 +341,23 @@ export function TransactionsPage() {
             onClick={() => {
               setEditingTx(null);
               setFormAccountId(accounts[0]?.id || '');
+              setFormTxType('INCOME');
+              setFormError(null);
+              setDuplicateConflict(false);
+              setTxModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold cursor-pointer border"
+            style={{ borderColor: 'var(--accent)', background: 'var(--surface)', color: 'var(--accent)' }}
+          >
+            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+            + Add Income
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingTx(null);
+              setFormAccountId(accounts[0]?.id || '');
+              setFormTxType('EXPENSE');
               setFormError(null);
               setDuplicateConflict(false);
               setTxModalOpen(true);
@@ -337,6 +368,13 @@ export function TransactionsPage() {
             <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             Add Transaction
           </button>
+          <Link
+            to="/app/income-expenses"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border text-xs font-medium no-underline"
+            style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)' }}
+          >
+            Manage Streams →
+          </Link>
         </div>
       </div>
 
@@ -597,7 +635,7 @@ export function TransactionsPage() {
       </ModalDialog>
 
       {/* Add/Edit Transaction Modal */}
-      <ModalDialog open={txModalOpen} onClose={() => setTxModalOpen(false)} title={editingTx ? 'Edit Transaction' : 'Add Transaction'}>
+      <ModalDialog open={txModalOpen} onClose={() => setTxModalOpen(false)} title={editingTx ? 'Edit Transaction' : formTxType === 'INCOME' ? 'Record Income' : 'Record Transaction'}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -622,6 +660,28 @@ export function TransactionsPage() {
               </div>
             </div>
           )}
+
+          {/* Quick Type Selection Pills */}
+          <div className="flex rounded-md p-1 border gap-1" style={{ borderColor: 'var(--border)', background: 'var(--elevated)' }}>
+            {[
+              { type: 'INCOME', label: '➕ Income' },
+              { type: 'EXPENSE', label: '➖ Expense' },
+              { type: 'TRANSFER', label: '⇄ Transfer' },
+            ].map(({ type, label }) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setFormTxType(type)}
+                className="flex-1 py-1.5 text-xs font-semibold rounded cursor-pointer transition-colors"
+                style={{
+                  background: formTxType === type ? 'var(--accent)' : 'transparent',
+                  color: formTxType === type ? 'var(--accent-text)' : 'var(--text-secondary)',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
